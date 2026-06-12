@@ -1,0 +1,88 @@
+{
+  "name": "Daily Stock Analysis",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 17
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-1",
+      "name": "Every Day at 5 PM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "https://www.alphavantage.co/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "function",
+              "value": "GLOBAL_QUOTE"
+            },
+            {
+              "name": "symbol",
+              "value": "AAPL"
+            },
+            {
+              "name": "apikey",
+              "value": "YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-request-1",
+      "name": "Get Stock Price",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pull out the useful fields from the Alpha Vantage response\nconst quote = $input.first().json['Global Quote'];\n\nif (!quote) {\n  throw new Error('No quote data returned. Check your API key or symbol.');\n}\n\nconst symbol = quote['01. symbol'];\nconst price = parseFloat(quote['05. price']);\nconst change = parseFloat(quote['09. change']);\nconst changePercent = quote['10. change percent'];\n\n// Simple signal logic (for learning purposes only)\nlet signal = 'HOLD';\nif (parseFloat(changePercent) > 2) signal = 'STRONG MOVE UP';\nif (parseFloat(changePercent) < -2) signal = 'STRONG MOVE DOWN';\n\nreturn [{\n  json: {\n    symbol,\n    price,\n    change,\n    changePercent,\n    signal,\n    summary: `${symbol}: $${price} (${changePercent}) — ${signal}`,\n    date: new Date().toISOString().split('T')[0]\n  }\n}];"
+      },
+      "id": "code-1",
+      "name": "Analyze",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0]
+    }
+  ],
+  "connections": {
+    "Every Day at 5 PM": {
+      "main": [
+        [
+          {
+            "node": "Get Stock Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Stock Price": {
+      "main": [
+        [
+          {
+            "node": "Analyze",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
