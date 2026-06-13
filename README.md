@@ -1,6 +1,8 @@
 # Stock Trading Analyst
 
 An automated stock analysis project powered by **n8n** workflows and **Python** scripts.
+## Workflow in action
+   ![n8n workflow](workflow-screenshot.png)
 
 ## What it does
 
